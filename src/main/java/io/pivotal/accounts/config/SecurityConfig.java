@@ -25,7 +25,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable()
                 .authorizeRequests()
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-                .anyRequest().permitAll();
+                .anyRequest().hasAuthority("ROLE_ACCOUNT")
+                .and().oauth2ResourceServer()
+                .jwt().jwtAuthenticationConverter(grantedAuthoritiesConverter).decoder(jwtDecoder());
+    }
+
+    private JwtDecoder jwtDecoder() {
+        String issuerUri = this.resourceServerProperties.getJwt().getIssuerUri();
+
+        NimbusJwtDecoderJwkSupport jwtDecoder =
+                (NimbusJwtDecoderJwkSupport) JwtDecoders.fromOidcIssuerLocation(issuerUri);
+        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
+        jwtDecoder.setJwtValidator(withIssuer);
+
+        return jwtDecoder;
     }
 
 

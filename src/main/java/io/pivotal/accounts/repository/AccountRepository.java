@@ -10,5 +10,6 @@ import java.util.List;
 
 public interface AccountRepository extends CrudRepository<Account,Integer> {
 
+	@Query("from Account where userid = ?#{principal.claims['user_id']}")
     List<Account> findAll();
 }
