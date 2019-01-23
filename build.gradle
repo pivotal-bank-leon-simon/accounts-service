@@ -106,6 +106,7 @@ dependencies {
 
     //test packages
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test:5.1.1.RELEASE")
     testImplementation("com.jayway.jsonpath:json-path")
     // Runtime
     runtime "org.hsqldb:hsqldb"

@@ -2,26 +2,40 @@ package io.pivotal.accounts.controller;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.pivotal.accounts.config.SecurityConfig;
 import io.pivotal.accounts.configuration.ServiceTestConfiguration;
+import io.pivotal.accounts.configuration.TestSecurityConfiguration;
 import io.pivotal.accounts.domain.AccountType;
 import io.pivotal.accounts.service.AccountService;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 /**
  * Tests for the AccountsController.
@@ -30,7 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(controllers = AccountController.class, secure = false)
+@Import(TestSecurityConfiguration.class)
+@WebMvcTest(controllers = AccountController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
 public class AccountControllerTest {
 
     private static final String EXPECTED_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'+0000'";
@@ -41,6 +56,18 @@ public class AccountControllerTest {
 
     @MockBean
     private AccountService service;
+
+    private JwtAuthenticationToken token;
+
+    @Before
+    public void before() {
+        HashMap<String, Object> headers = new HashMap<>();
+        headers.put("header1", "value1");
+        HashMap<String, Object> claims = new HashMap<>();
+        claims.put("sub", "user@user.com");
+        Jwt jwt = new Jwt("tokenValue", Instant.now(), Instant.MAX, headers, claims);
+        token = new JwtAuthenticationToken(jwt, Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"), new SimpleGrantedAuthority("ROLE_ACCOUNT"), new SimpleGrantedAuthority("ROLE_TRADE")));
+    }
 
 
     /**
@@ -55,7 +82,7 @@ public class AccountControllerTest {
                 .thenReturn(ServiceTestConfiguration.ACCOUNT_ID);
 
         mockMvc.perform(
-                post("/accounts").contentType(MediaType.APPLICATION_JSON)
+                post("/accounts").with(authentication(token)).contentType(MediaType.APPLICATION_JSON)
                         .content(
                                 convertObjectToJson(ServiceTestConfiguration
                                         .account())))
@@ -75,6 +102,7 @@ public class AccountControllerTest {
 
         mockMvc.perform(
                 get("/accounts/" + ServiceTestConfiguration.ACCOUNT_ID)
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .account())))
@@ -112,6 +140,7 @@ public class AccountControllerTest {
 
         mockMvc.perform(
                 get("/accounts?name=" + ServiceTestConfiguration.USER_ID)
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .account())))
@@ -149,6 +178,7 @@ public class AccountControllerTest {
 
         mockMvc.perform(
                 get("/accounts")
+                        .with(authentication(token))
                         .param("name", ServiceTestConfiguration.USER_ID)
                         .param("type", "CURRENT")
                         .contentType(MediaType.APPLICATION_JSON).content(
@@ -188,6 +218,7 @@ public class AccountControllerTest {
 
         MvcResult result = mockMvc.perform(
                 post("/accounts/transaction")
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .getCreditTransaction())))
@@ -210,6 +241,7 @@ public class AccountControllerTest {
 
         MvcResult result = mockMvc.perform(
                 post("/accounts/transaction")
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .getBadCreditTransaction())))
@@ -232,6 +264,7 @@ public class AccountControllerTest {
 
         mockMvc.perform(
                 post("/accounts/transaction")
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .getDebitTransaction())))
@@ -255,6 +288,7 @@ public class AccountControllerTest {
 
         mockMvc.perform(
                 post("/accounts/transaction")
+                        .with(authentication(token))
                         .contentType(MediaType.APPLICATION_JSON).content(
                         convertObjectToJson(ServiceTestConfiguration
                                 .getBadDebitTransaction())))

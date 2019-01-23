@@ -99,11 +99,7 @@ public class AccountController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public Boolean save(@RequestBody Account accountRequest,
 									   UriComponentsBuilder builder, @AuthenticationPrincipal JwtAuthenticationToken token) {
-		if (token != null) {
-			accountRequest.setUserid(token.getName());
-		} else {
-			accountRequest.setUserid("hello");
-		}
+		accountRequest.setUserid(token.getName());
 		logger.debug("AccountController.save: userId="
 				+ accountRequest.getUserid());
 		Integer accountProfileId = this.service.saveAccount(accountRequest);

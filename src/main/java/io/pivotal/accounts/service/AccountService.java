@@ -2,6 +2,7 @@ package io.pivotal.accounts.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.pivotal.accounts.domain.Account;
 import io.pivotal.accounts.domain.AccountType;
@@ -60,7 +61,7 @@ public class AccountService {
 	 */
 	public List<Account> findAccounts() {
 
-		List<Account> account = accounts.findByUserid();
+		List<Account> account = accounts.findAll();
 		
 		logger.debug("Found " + account.size() + " account(s).");
 		
@@ -80,7 +81,10 @@ public class AccountService {
 
 		logger.debug("AccountService.findAccount: and type: " + type.toString());
 
-		List<Account> account = accounts.findByUseridAndType(type);
+		List<Account> account = findAccounts()
+				.stream()
+				.filter(a -> type.equals(a.getType()))
+				.collect(Collectors.toList());
 		
 		logger.debug("Found " + account.size() + " account(s).");
 		
