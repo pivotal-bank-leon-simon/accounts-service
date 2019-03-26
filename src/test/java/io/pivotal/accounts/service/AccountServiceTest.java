@@ -77,9 +77,9 @@ public class AccountServiceTest {
 	@Test
 	public void doFindAccountsByType() {
 		List<Account> accountsByType = new ArrayList<>(ServiceTestConfiguration.accountList());
-		accountsByType.forEach(a -> a.setType(AccountType.CURRENT));
+		accountsByType.forEach(a -> a.setType(AccountType.SAVINGS));
 		when(repo.findAll()).thenReturn(accountsByType);
-		List<Account> accounts = service.findAccountsByType(AccountType.CURRENT);
+		List<Account> accounts = service.findAccountsByType(AccountType.SAVINGS);
 		assertEquals(accounts.size(),1);
 		assertEquals(accounts.get(0),ServiceTestConfiguration.account());
 	}
